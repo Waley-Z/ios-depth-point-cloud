@@ -194,8 +194,8 @@ encoder.setVertexBytes(&confSelection, length: MemoryLayout<Int>.stride, index: 
 To call into the GPU functions that draw the point cloud, the sample defines a pipeline state that queues up its `pointCloudVertexShader` and `pointCloudFragmentShader` Metal functions (see the project's `shaders.metal` file).
 
 ``` swift
-pipelineDescriptor.vertexFunction = library!.makeFunction(name: "pointCloudVertexShader")
-pipelineDescriptor.fragmentFunction = library!.makeFunction(name: "pointCloudFragmentShader")
+pipelineDescriptor.vertexFunction = library.makeFunction(name: "pointCloudVertexShader")
+pipelineDescriptor.fragmentFunction = library.makeFunction(name: "pointCloudFragmentShader")
 ```
 
 On the GPU, the point cloud vertex shader determines each point's color and position on the screen. In the function signature, the vertex shader receives the input textures and properties sent by the CPU code.
@@ -293,27 +293,26 @@ ARKit's depth map contains precise, low-resolution depth values for objects in t
 The sample project uses MPS to enlarge the depth buffer; see the `ARDataProvider.swift` file. The `ARProvider` class initializer creates a guided filter to enlarge the depth buffer.
 
 ``` swift
-guidedFilter = MPSImageGuidedFilter(device: metalDevice!, kernelDiameter: guidedFilterKernelDiameter)
+guidedFilter = MPSImageGuidedFilter(device: metalDevice, kernelDiameter: guidedFilterKernelDiameter)
 ```
 
 To align the sizes of the related visuals — the camera image and confidence texture — the AR provider uses an MPS bilinear scale filter. 
 
 ``` swift
-mpsScaleFilter = MPSImageBilinearScale(device: metalDevice!)
+mpsScaleFilter = MPSImageBilinearScale(device: metalDevice)
 ```
 
 In the `processLastARData` routine, the AR provider creates an additional Metal command buffer for a compute pass that enlarges the depth buffer.
 
 ``` swift
 if isToUpsampleDepth {
-    guard let commandQueue = commandQueue else { return }
 ```
 
 The AR provider converts the input depth data to RGB format, as required by the guided filter.
 
 ``` swift
-let convertYUV2RGBFunc = lib!.makeFunction(name: "convertYCbCrToRGBA")
-pipelineStateCompute = try metalDevice!.makeComputePipelineState(function: convertYUV2RGBFunc!)
+let convertYUV2RGBFunc = lib.makeFunction(name: "convertYCbCrToRGBA")
+pipelineStateCompute = try metalDevice.makeComputePipelineState(function: convertYUV2RGBFunc!)
 ```
 
 After encoding the bilinear scale and guided filters, the AR provider sets the enlarged depth buffer. 
@@ -352,7 +351,7 @@ depthContent.texture = lastArData?.depthImage?.texture(withFormat: .r32Float, pl
 The depth-texture view's coordinator, [`CoordinatorDepth`](x-source-tag://CoordinatorDepth), assigns a shader that fills the texture. 
 
 ``` swift
-pipelineDescriptor.fragmentFunction = library!.makeFunction(name: "planeFragmentShaderDepth")
+pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShaderDepth")
 ```
 
 The [`planeFragmentShaderDepth`](x-source-tag://planeFragmentShaderDepth) shader (see `shaders.metal`) converts the depth values into RGB, as required to display them. 
@@ -388,7 +387,7 @@ confidenceContent.texture = lastArData?.confidenceImage?.texture(withFormat: .r8
 The confidence-texture view’s coordinator, [`CoordinatorConfidence`](x-source-tag://CoordinatorConfidence), assigns a shader that fills the texture.
 
 ``` swift
-pipelineDescriptor.fragmentFunction = library!.makeFunction(name: "planeFragmentShaderConfidence")
+pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShaderConfidence")
 ```
 
 The [`planeFragmentShaderConfidence`](x-source-tag://planeFragmentShaderConfidence) shader (see `shaders.metal`) converts the depth values into RGB, as required to display them. 
@@ -411,7 +410,7 @@ fragment half4 planeFragmentShaderConfidence(ColorInOut in [[stage_in]], texture
 ```
 
 [1]:https://developer.apple.com/wwdc20/10611/
-[2]:https://developer.apple.com/documentation/arkit/creating_a_fog_effect_using_scene_depth
+[2]:https://developer.apple.com/documentation/arkit/environmental_analysis/creating_a_fog_effect_using_scene_depth
 [3]:https://developer.apple.com/documentation/swiftui/scene
 [4]:https://developer.apple.com/documentation/swiftui/view
 [5]:https://developer.apple.com/documentation/metal

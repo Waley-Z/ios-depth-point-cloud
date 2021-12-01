@@ -86,10 +86,10 @@ final class ARProvider: ARDataReceiver, ObservableObject {
         }
     }
     var textureCache: CVMetalTextureCache?
-    let metalDevice: MTLDevice?
+    let metalDevice: MTLDevice
     let guidedFilter: MPSImageGuidedFilter?
     let mpsScaleFilter: MPSImageBilinearScale?
-    let commandQueue: MTLCommandQueue?
+    let commandQueue: MTLCommandQueue
     let pipelineStateCompute: MTLComputePipelineState?
     
     // Create an empty texture.
@@ -116,27 +116,27 @@ final class ARProvider: ARDataReceiver, ObservableObject {
     // Initialize the MPS filters, metal pipeline, and Metal textures.
     init?() {
         do {
-            metalDevice = MTLCreateSystemDefaultDevice()
-            CVMetalTextureCacheCreate(nil, nil, metalDevice!, nil, &textureCache)
-            guidedFilter = MPSImageGuidedFilter(device: metalDevice!, kernelDiameter: guidedFilterKernelDiameter)
+            metalDevice = EnvironmentVariables.shared.metalDevice
+            CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
+            guidedFilter = MPSImageGuidedFilter(device: metalDevice, kernelDiameter: guidedFilterKernelDiameter)
             guidedFilter?.epsilon = guidedFilterEpsilon
-            mpsScaleFilter = MPSImageBilinearScale(device: metalDevice!)
-            commandQueue = metalDevice!.makeCommandQueue()
-            let lib = metalDevice!.makeDefaultLibrary()
-            let convertYUV2RGBFunc = lib!.makeFunction(name: "convertYCbCrToRGBA")
-            pipelineStateCompute = try metalDevice!.makeComputePipelineState(function: convertYUV2RGBFunc!)
+            mpsScaleFilter = MPSImageBilinearScale(device: metalDevice)
+            commandQueue = EnvironmentVariables.shared.metalCommandQueue
+            let lib = EnvironmentVariables.shared.metalLibrary
+            let convertYUV2RGBFunc = lib.makeFunction(name: "convertYCbCrToRGBA")
+            pipelineStateCompute = try metalDevice.makeComputePipelineState(function: convertYUV2RGBFunc!)
             // Initialize the working textures.
-            coefTexture = ARProvider.createTexture(metalDevice: metalDevice!, width: origDepthWidth, height: origDepthHeight,
+            coefTexture = ARProvider.createTexture(metalDevice: metalDevice, width: origDepthWidth, height: origDepthHeight,
                                                    usage: [.shaderRead, .shaderWrite], pixelFormat: .rgba32Float)
-            destDepthTexture = ARProvider.createTexture(metalDevice: metalDevice!, width: upscaledWidth, height: upscaledHeight,
+            destDepthTexture = ARProvider.createTexture(metalDevice: metalDevice, width: upscaledWidth, height: upscaledHeight,
                                                         usage: [.shaderRead, .shaderWrite], pixelFormat: .r32Float)
-            destConfTexture = ARProvider.createTexture(metalDevice: metalDevice!, width: upscaledWidth, height: upscaledHeight,
+            destConfTexture = ARProvider.createTexture(metalDevice: metalDevice, width: upscaledWidth, height: upscaledHeight,
                                                        usage: [.shaderRead, .shaderWrite], pixelFormat: .r8Unorm)
-            colorRGBTexture = ARProvider.createTexture(metalDevice: metalDevice!, width: origColorWidth, height: origColorHeight,
+            colorRGBTexture = ARProvider.createTexture(metalDevice: metalDevice, width: origColorWidth, height: origColorHeight,
                                                        usage: [.shaderRead, .shaderWrite], pixelFormat: .rgba32Float)
-            colorRGBTextureDownscaled = ARProvider.createTexture(metalDevice: metalDevice!, width: upscaledWidth, height: upscaledHeight,
+            colorRGBTextureDownscaled = ARProvider.createTexture(metalDevice: metalDevice, width: upscaledWidth, height: upscaledHeight,
                                                                  usage: [.shaderRead, .shaderWrite], pixelFormat: .rgba32Float)
-            colorRGBTextureDownscaledLowRes = ARProvider.createTexture(metalDevice: metalDevice!, width: origDepthWidth, height: origDepthHeight,
+            colorRGBTextureDownscaledLowRes = ARProvider.createTexture(metalDevice: metalDevice, width: origDepthWidth, height: origDepthHeight,
                                                                        usage: [.shaderRead, .shaderWrite], pixelFormat: .rgba32Float)
             upscaledCoef.texture = coefTexture
             upscaledConfidence.texture = destConfTexture
@@ -169,7 +169,6 @@ final class ARProvider: ARDataReceiver, ObservableObject {
             confidenceContent.texture = lastArData?.confidenceImage?.texture(withFormat: .r8Unorm, planeIndex: 0, addToCache: textureCache!)!
         }
         if isToUpsampleDepth {
-            guard let commandQueue = commandQueue else { return }
             guard let cmdBuffer = commandQueue.makeCommandBuffer() else { return }
             guard let computeEncoder = cmdBuffer.makeComputeCommandEncoder() else { return }
             // Convert YUV to RGB because the guided filter needs RGB format.

@@ -21,10 +21,8 @@ class MTKCoordinator: NSObject, MTKViewDelegate {
     init(content: MetalTextureContent, view: MTKView) {
         self.content = content
         self.view = view
-        if let metalDevice = MTLCreateSystemDefaultDevice() {
-            view.device = metalDevice
-            self.metalCommandQueue = metalDevice.makeCommandQueue()!
-        }
+        self.view.device = EnvironmentVariables.shared.metalDevice
+        self.metalCommandQueue = EnvironmentVariables.shared.metalCommandQueue
         super.init()
         
         prepareFunctions()
@@ -32,11 +30,11 @@ class MTKCoordinator: NSObject, MTKViewDelegate {
     func prepareFunctions() {
         guard let metalDevice = view.device else { fatalError("Expected a Metal device.") }
         do {
-            let library = metalDevice.makeDefaultLibrary()
+            let library = EnvironmentVariables.shared.metalLibrary
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
-            pipelineDescriptor.vertexFunction = library!.makeFunction(name: "planeVertexShader")
-            pipelineDescriptor.fragmentFunction = library!.makeFunction(name: "planeFragmentShader")
+            pipelineDescriptor.vertexFunction = library.makeFunction(name: "planeVertexShader")
+            pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShader")
             pipelineDescriptor.vertexDescriptor = createPlaneMetalVertexDescriptor()
             pipelineState = try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
         } catch {
