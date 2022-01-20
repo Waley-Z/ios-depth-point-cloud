@@ -52,7 +52,7 @@ struct MetalDepthView: View {
     
     // Manage the AR session and AR data processing.
     //- Tag: ARProvider
-    @ObservedObject var arProvider: ARProvider = ARProvider()!
+    var arProvider: ARProvider = ARProvider()
     let ciContext: CIContext = CIContext()
 
     // Save the user's confidence selection.
@@ -119,9 +119,14 @@ struct MetalDepthView: View {
                                 MetalTextureViewConfidence(mtkView: MTKView(), content: arProvider.confidenceContent)
                                     .zoomOnTapModifier(height: sizeH, width: sizeW, title: "Confidence")
                                 if isToUpsampleDepth {
-                                    Image(arProvider.upscaledCoef.texture!, ciContext: ciContext,
-                                          scale: 1.0, orientation: .leftMirrored, label: Text("Upscale Coefficients")).resizable()
-                                        .zoomOnTapModifier(height: sizeH, width: sizeW, title: "Upscale Coefficients")
+                                    VStack {
+                                        Text("Upscale Coefficients").foregroundColor(Color.red)
+                                        MetalTextureViewCoefs(mtkView: MTKView(),
+                                                              content: arProvider.upscaledCoef).frame(maxWidth: sizeW,
+                                                                                                      maxHeight: sizeH,
+                                                                                                      alignment: .center)
+                                    }
+                                   
                                 }
                                 
                             }

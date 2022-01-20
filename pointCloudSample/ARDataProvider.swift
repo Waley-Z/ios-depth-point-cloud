@@ -38,7 +38,7 @@ extension CVPixelBuffer {
 // Collect AR data using a lower-level receiver. This class converts AR data
 // to a Metal texture, optionally upscaling depth data using a guided filter,
 // and implements `ARDataReceiver` to respond to `onNewARData` events.
-final class ARProvider: ARDataReceiver, ObservableObject {
+final class ARProvider: ARDataReceiver {
     // Set the destination resolution for the upscaled algorithm.
     let upscaledWidth = 960
     let upscaledHeight = 760
@@ -56,7 +56,7 @@ final class ARProvider: ARDataReceiver, ObservableObject {
     let guidedFilterKernelDiameter = 5
     
     let arReceiver = ARReceiver()
-    @Published var lastArData: ARData?
+    var lastArData: ARData?
     let depthContent = MetalTextureContent()
     let confidenceContent = MetalTextureContent()
     let colorYContent = MetalTextureContent()
@@ -114,7 +114,7 @@ final class ARProvider: ARDataReceiver, ObservableObject {
     }
     
     // Initialize the MPS filters, metal pipeline, and Metal textures.
-    init?() {
+    init() {
         do {
             metalDevice = EnvironmentVariables.shared.metalDevice
             CVMetalTextureCacheCreate(nil, nil, metalDevice, nil, &textureCache)
@@ -146,8 +146,7 @@ final class ARProvider: ARDataReceiver, ObservableObject {
             arReceiver.delegate = self
             
         } catch {
-            print("Unexpected error: \(error).")
-            return nil
+            fatalError("Unexpected error: \(error).")
         }
     }
     

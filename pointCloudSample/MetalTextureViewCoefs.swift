@@ -34,7 +34,7 @@ class MTKCoordinator: NSObject, MTKViewDelegate {
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
             pipelineDescriptor.vertexFunction = library.makeFunction(name: "planeVertexShader")
-            pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShader")
+            pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShaderCoefs")
             pipelineDescriptor.vertexDescriptor = createPlaneMetalVertexDescriptor()
             pipelineState = try metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
         } catch {
@@ -89,13 +89,13 @@ class MTKCoordinator: NSObject, MTKViewDelegate {
 
 }
 //- Tag: MetalTextureView
-struct MetalTextureView: UIViewRepresentable {
+struct MetalTextureViewCoefs: UIViewRepresentable {
     var mtkView: MTKView
     var content: MetalTextureContent
     func makeCoordinator() -> MTKCoordinator {
         MTKCoordinator(content: content, view: mtkView)
     }
-    func makeUIView(context: UIViewRepresentableContext<MetalTextureView>) -> MTKView {
+    func makeUIView(context: UIViewRepresentableContext<MetalTextureViewCoefs>) -> MTKView {
         mtkView.delegate = context.coordinator
         mtkView.preferredFramesPerSecond = 60
         mtkView.backgroundColor = context.environment.colorScheme == .dark ? .black : .white
@@ -110,7 +110,7 @@ struct MetalTextureView: UIViewRepresentable {
     
     // `UIViewRepresentable` requires this implementation; however, the sample
     // app doesn't use it. Instead, `MTKView.delegate` handles display updates.
-    func updateUIView(_ uiView: MTKView, context: UIViewRepresentableContext<MetalTextureView>) {
+    func updateUIView(_ uiView: MTKView, context: UIViewRepresentableContext<MetalTextureViewCoefs>) {
         
     }
 }

@@ -48,7 +48,7 @@ if !ARWorldTrackingConfiguration.supportsFrameSemantics([.sceneDepth, .smoothedS
 To separate data acquisition from its display, the sample app wraps ARKit calls in its [`ARProvider`](x-source-tag://ARProvider) class. 
 
 ``` swift
-@ObservedObject var arProvider: ARProvider = ARProvider()!
+var arProvider: ARProvider = ARProvider()
 ```
 
 The AR provider runs a world-tracking configuration and requests information about the scene's depth by configuring the scene-depth frame semantics (see [`sceneDepth`][7] and [`smoothedSceneDepth`][8]).

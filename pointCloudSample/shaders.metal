@@ -41,6 +41,17 @@ fragment float4 planeFragmentShader(ColorInOut in [[stage_in]], texture2d<float,
     return sample;
 }
 
+// Shade a 2D plane by using the length of the values that are encoded in the RGBA channels.
+fragment half4 planeFragmentShaderCoefs(ColorInOut in [[stage_in]], texture2d<float, access::sample> textureIn [[ texture(0) ]])
+{
+    constexpr sampler colorSampler(address::clamp_to_edge, filter::linear);
+    float4 sample = textureIn.sample(colorSampler, in.texCoord);
+    half a = length(sample.rgb);
+    half b = abs(sample.a);
+    return half4(a+b, b, b, 1);
+}
+
+
 // Convert a color value to RGB using a Jet color scheme.
 static half4 getJetColorsFromNormalizedVal(half val) {
     half4 res ;

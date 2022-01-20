@@ -10,7 +10,7 @@
 		AED3761A2757534400C631A2 /* EnvironmentVariables.swift in Sources */ = {isa = PBXBuildFile; fileRef = AED376192757534400C631A2 /* EnvironmentVariables.swift */; };
 		E4DF0B0824CF1A1D0024833B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E4DF0B0724CF1A1D0024833B /* Assets.xcassets */; };
 		E4DF0B1B24CF1A810024833B /* MetalViewSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1224CF1A7F0024833B /* MetalViewSample.swift */; };
-		E4DF0B1C24CF1A810024833B /* MetalTextureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1324CF1A7F0024833B /* MetalTextureView.swift */; };
+		E4DF0B1C24CF1A810024833B /* MetalTextureViewCoefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1324CF1A7F0024833B /* MetalTextureViewCoefs.swift */; };
 		E4DF0B1D24CF1A810024833B /* MetalTextureViewDepth.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1424CF1A7F0024833B /* MetalTextureViewDepth.swift */; };
 		E4DF0B1E24CF1A810024833B /* ARReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1524CF1A800024833B /* ARReceiver.swift */; };
 		E4DF0B1F24CF1A810024833B /* MetalTextureViewConfidence.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF0B1624CF1A800024833B /* MetalTextureViewConfidence.swift */; };
@@ -29,7 +29,7 @@
 		E4DF0B0724CF1A1D0024833B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E4DF0B0C24CF1A1D0024833B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E4DF0B1224CF1A7F0024833B /* MetalViewSample.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalViewSample.swift; sourceTree = "<group>"; };
-		E4DF0B1324CF1A7F0024833B /* MetalTextureView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalTextureView.swift; sourceTree = "<group>"; };
+		E4DF0B1324CF1A7F0024833B /* MetalTextureViewCoefs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalTextureViewCoefs.swift; sourceTree = "<group>"; };
 		E4DF0B1424CF1A7F0024833B /* MetalTextureViewDepth.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalTextureViewDepth.swift; sourceTree = "<group>"; };
 		E4DF0B1524CF1A800024833B /* ARReceiver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ARReceiver.swift; sourceTree = "<group>"; };
 		E4DF0B1624CF1A800024833B /* MetalTextureViewConfidence.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalTextureViewConfidence.swift; sourceTree = "<group>"; };
@@ -94,7 +94,7 @@
 				AED376192757534400C631A2 /* EnvironmentVariables.swift */,
 				E4DF0B1524CF1A800024833B /* ARReceiver.swift */,
 				E4DF0B1A24CF1A810024833B /* MetalPointCloud.swift */,
-				E4DF0B1324CF1A7F0024833B /* MetalTextureView.swift */,
+				E4DF0B1324CF1A7F0024833B /* MetalTextureViewCoefs.swift */,
 				E4DF0B1624CF1A800024833B /* MetalTextureViewConfidence.swift */,
 				E4DF0B1424CF1A7F0024833B /* MetalTextureViewDepth.swift */,
 				E4DF0B1224CF1A7F0024833B /* MetalViewSample.swift */,
@@ -177,7 +177,7 @@
 			files = (
 				E4DF0B2224CF1A810024833B /* shaders.metal in Sources */,
 				E4DF0B1D24CF1A810024833B /* MetalTextureViewDepth.swift in Sources */,
-				E4DF0B1C24CF1A810024833B /* MetalTextureView.swift in Sources */,
+				E4DF0B1C24CF1A810024833B /* MetalTextureViewCoefs.swift in Sources */,
 				AED3761A2757534400C631A2 /* EnvironmentVariables.swift in Sources */,
 				E4DF0B2324CF1A810024833B /* MetalPointCloud.swift in Sources */,
 				E4DF0B1F24CF1A810024833B /* MetalTextureViewConfidence.swift in Sources */,
