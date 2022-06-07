@@ -34,20 +34,21 @@ final class CoordinatorPointCloud: MTKCoordinator {
     }
     var currentCameraMode: CameraModes
     
-    init(mtkView: MTKView, arData: ARProvider, confSelection: Binding<Int>, scaleMovement: Binding<Float>) {
+    init(arData: ARProvider, confSelection: Binding<Int>, scaleMovement: Binding<Float>) {
         self.arData = arData
         self.currentCameraMode = .sidewaysMovement
         self._confSelection = confSelection
         self._scaleMovement = scaleMovement
-        super.init(content: arData.depthContent, view: mtkView)
+        super.init(content: arData.depthContent)
     }
     
     override func prepareFunctions() {
-        guard let metalDevice = view.device else { fatalError("Expected a Metal device.") }
+        guard let metalDevice = mtkView.device else { fatalError("Expected a Metal device.") }
         do {
             let library = EnvironmentVariables.shared.metalLibrary
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            pipelineDescriptor.depthAttachmentPixelFormat = .depth32Float
             pipelineDescriptor.vertexFunction = library.makeFunction(name: "pointCloudVertexShader")
             pipelineDescriptor.fragmentFunction = library.makeFunction(name: "pointCloudFragmentShader")
             pipelineDescriptor.vertexDescriptor = createPlaneMetalVertexDescriptor()
@@ -159,24 +160,17 @@ final class CoordinatorPointCloud: MTKCoordinator {
 }
 //- Tag: MetalPointCloud
 struct MetalPointCloud: UIViewRepresentable {
-    var mtkView: MTKView
     var arData: ARProvider
     @Binding var confSelection: Int
     @Binding var scaleMovement: Float
     func makeCoordinator() -> CoordinatorPointCloud {
-        return CoordinatorPointCloud( mtkView: mtkView, arData: arData, confSelection: $confSelection, scaleMovement: $scaleMovement)
+        return CoordinatorPointCloud(arData: arData, confSelection: $confSelection, scaleMovement: $scaleMovement)
     }
     func makeUIView(context: UIViewRepresentableContext<MetalPointCloud>) -> MTKView {
+        let mtkView = MTKView()
         mtkView.delegate = context.coordinator
-        mtkView.preferredFramesPerSecond = 60
         mtkView.backgroundColor = context.environment.colorScheme == .dark ? .black : .white
-        mtkView.isOpaque = true
-        mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        mtkView.drawableSize = mtkView.frame.size
-        mtkView.enableSetNeedsDisplay = false
-        mtkView.depthStencilPixelFormat = .depth32Float
-        mtkView.colorPixelFormat = .bgra8Unorm
+        context.coordinator.setupView(mtkView: mtkView)
         return mtkView
     }
     

@@ -40,7 +40,7 @@ extension Image {
     init(_ texture: MTLTexture, ciContext: CIContext, scale: CGFloat, orientation: Image.Orientation, label: Text) {
         let ciimage = CIImage(mtlTexture: texture)!
         let cgimage = ciContext.createCGImage(ciimage, from: ciimage.extent)
-        self.init(cgimage!, scale: 1.0, orientation: .leftMirrored, label: label)
+        self.init(cgimage!, scale: 1.0, orientation: orientation, label: label)
     }
 }
 //- Tag: MetalDepthView
@@ -54,7 +54,7 @@ struct MetalDepthView: View {
     //- Tag: ARProvider
     var arProvider: ARProvider = ARProvider()
     let ciContext: CIContext = CIContext()
-
+    
     // Save the user's confidence selection.
     @State private var selectedConfidence = 0
     // Set the depth view's state data.
@@ -64,26 +64,29 @@ struct MetalDepthView: View {
     @State private var scaleMovement: Float = 1.5
     
     var confLevels = ["🔵🟢🔴", "🔵🟢", "🔵"]
- 
+    
     var body: some View {
         if !ARWorldTrackingConfiguration.supportsFrameSemantics([.sceneDepth, .smoothedSceneDepth]) {
             Text("Unsupported Device: This app requires the LiDAR Scanner to access the scene's depth.")
         } else {
             NavigationView {
                 GeometryReader { geometry in
-                    VStack(alignment: .leading) {
+                    VStack() {
                         // Size the point cloud view relative to the underlying
                         // 3D geometry by matching the textures' aspect ratio.
-                        HStack {
+                        HStack() {
                             Spacer()
-                            MetalPointCloud(mtkView: MTKView(), arData: arProvider, confSelection: $selectedConfidence, scaleMovement: $scaleMovement)
-                                .zoomOnTapModifier(height: geometry.size.width / 2 / sizeW * sizeH, width: geometry.size.width / 2, title: "")
+                            MetalPointCloud(arData: arProvider,
+                                            confSelection: $selectedConfidence,
+                                            scaleMovement: $scaleMovement).zoomOnTapModifier(
+                                                height: geometry.size.width / 2 / sizeW * sizeH,
+                                                width: geometry.size.width / 2, title: "")
                             Spacer()
                         }
                         HStack {
                             Text("Confidence Select:")
                             Picker(selection: $selectedConfidence, label: Text("Confidence Select")) {
-                                ForEach(0..<confLevels.count) { index in
+                                ForEach(0..<confLevels.count, id: \.self) { index in
                                     Text(self.confLevels[index]).tag(index)
                                 }
                                 
@@ -114,19 +117,18 @@ struct MetalDepthView: View {
                         
                         ScrollView(.horizontal) {
                             HStack() {
-                                MetalTextureViewDepth(mtkView: MTKView(), content: arProvider.depthContent, confSelection: $selectedConfidence)
+                                MetalTextureViewDepth(content: arProvider.depthContent, confSelection: $selectedConfidence)
                                     .zoomOnTapModifier(height: sizeH, width: sizeW, title: isToUpsampleDepth ? "Upscaled Depth" : "Depth")
-                                MetalTextureViewConfidence(mtkView: MTKView(), content: arProvider.confidenceContent)
+                                MetalTextureViewConfidence(content: arProvider.confidenceContent)
                                     .zoomOnTapModifier(height: sizeH, width: sizeW, title: "Confidence")
                                 if isToUpsampleDepth {
                                     VStack {
                                         Text("Upscale Coefficients").foregroundColor(Color.red)
-                                        MetalTextureViewCoefs(mtkView: MTKView(),
-                                                              content: arProvider.upscaledCoef).frame(maxWidth: sizeW,
+                                        MetalTextureViewCoefs(content: arProvider.upscaledCoef).frame(maxWidth: sizeW,
                                                                                                       maxHeight: sizeH,
                                                                                                       alignment: .center)
                                     }
-                                   
+                                    
                                 }
                                 
                             }

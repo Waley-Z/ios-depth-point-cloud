@@ -118,23 +118,25 @@ To display a camera feed by using a point cloud, the project defines a [`UIViewR
 
 ``` swift
 struct MetalPointCloud: UIViewRepresentable {
-    var mtkView: MTKView
 ```
 
 The project inserts the point cloud view into the view hierarchy by embedding it within the [`MetalDepthView`](x-source-tag://MetalDepthView) layout.
 
 ``` swift
-HStack {
+HStack() {
     Spacer()
-    MetalPointCloud(mtkView: MTKView(), arData: arProvider, confSelection: $selectedConfidence, scaleMovement: $scaleMovement)
-        .zoomOnTapModifier(height: geometry.size.width / 2 / sizeW * sizeH, width: geometry.size.width / 2, title: "")
+    MetalPointCloud(arData: arProvider,
+                    confSelection: $selectedConfidence,
+                    scaleMovement: $scaleMovement).zoomOnTapModifier(
+                        height: geometry.size.width / 2 / sizeW * sizeH,
+                        width: geometry.size.width / 2, title: "")
 ```
 
 As representable of [`UIView`][20], the Metal texture view defines a coordinator, [`CoordinatorPointCloud`](x-source-tag://CoordinatorPointCloud). 
 
 ``` swift
 func makeCoordinator() -> CoordinatorPointCloud {
-    return CoordinatorPointCloud( mtkView: mtkView, arData: arData, confSelection: $confSelection, scaleMovement: $scaleMovement)
+    return CoordinatorPointCloud(arData: arData, confSelection: $confSelection, scaleMovement: $scaleMovement)
 }
 ```
 
@@ -154,16 +156,11 @@ In the `UIView` representable's `makeUIView` implementation, the sample project 
 
 ``` swift
 func makeUIView(context: UIViewRepresentableContext<MetalPointCloud>) -> MTKView {
+    let mtkView = MTKView()
     mtkView.delegate = context.coordinator
 ```
 
-[`MTKView`][19] sets up a display link for the sample project's preferred frames per second. 
-
-``` swift
-mtkView.preferredFramesPerSecond = 60
-```
-
-As a result, the display link calls the Metal coordinator's [`draw in view`][13] implementation 60 times per second. 
+At runtime, the display link then calls the Metal coordinator's [`draw in view`][13] implementation to issue CPU-side rendering commands. 
 
 ``` swift
 override func draw(in view: MTKView) {
@@ -338,7 +335,7 @@ The project inserts the depth visualization view into the view hierarchy by embe
 ``` swift
 ScrollView(.horizontal) {
     HStack() {
-        MetalTextureViewDepth(mtkView: MTKView(), content: arProvider.depthContent, confSelection: $selectedConfidence)
+        MetalTextureViewDepth(content: arProvider.depthContent, confSelection: $selectedConfidence)
             .zoomOnTapModifier(height: sizeH, width: sizeW, title: isToUpsampleDepth ? "Upscaled Depth" : "Depth")
 ```
 
@@ -374,7 +371,7 @@ fragment half4 planeFragmentShaderDepth(ColorInOut in [[stage_in]], texture2d<fl
 Similarly, the project inserts the confidence visualization view into the view hierarchy by embedding it within the [`MetalDepthView`](x-source-tag://MetalDepthView) layout in the project's `MetalViewSample.swift` file.
 
 ``` swift
-MetalTextureViewConfidence(mtkView: MTKView(), content: arProvider.confidenceContent)
+MetalTextureViewConfidence(content: arProvider.confidenceContent)
     .zoomOnTapModifier(height: sizeH, width: sizeW, title: "Confidence")
 ```
 

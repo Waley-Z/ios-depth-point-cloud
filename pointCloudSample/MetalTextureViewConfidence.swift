@@ -13,11 +13,12 @@ import Metal
 //- Tag: CoordinatorConfidence
 final class CoordinatorConfidence: MTKCoordinator {
     override func prepareFunctions() {
-        guard let metalDevice = view.device else { fatalError("Expected a Metal device.") }
+        guard let metalDevice = mtkView.device else { fatalError("Expected a Metal device.") }
         do {
             let library = EnvironmentVariables.shared.metalLibrary
             let pipelineDescriptor = MTLRenderPipelineDescriptor()
             pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            pipelineDescriptor.depthAttachmentPixelFormat = .depth32Float
             pipelineDescriptor.vertexFunction = library.makeFunction(name: "planeVertexShader")
             pipelineDescriptor.fragmentFunction = library.makeFunction(name: "planeFragmentShaderConfidence")
             pipelineDescriptor.vertexDescriptor = createPlaneMetalVertexDescriptor()
@@ -30,23 +31,16 @@ final class CoordinatorConfidence: MTKCoordinator {
 }
 
 struct MetalTextureViewConfidence: UIViewRepresentable {
-    var mtkView: MTKView
     var content: MetalTextureContent
     func makeCoordinator() -> CoordinatorConfidence {
-        CoordinatorConfidence(content: content, view: mtkView)
+        CoordinatorConfidence(content: content)
     }
     
     func makeUIView(context: UIViewRepresentableContext<MetalTextureViewConfidence>) -> MTKView {
+        let mtkView = MTKView()
         mtkView.delegate = context.coordinator
-        mtkView.preferredFramesPerSecond = 60
         mtkView.backgroundColor = context.environment.colorScheme == .dark ? .black : .white
-        mtkView.isOpaque = true
-        mtkView.framebufferOnly = false
-        mtkView.clearColor = MTLClearColor(red: 0, green: 0, blue: 0, alpha: 0)
-        mtkView.drawableSize = mtkView.frame.size
-        mtkView.enableSetNeedsDisplay = false
-        mtkView.colorPixelFormat = .bgra8Unorm
-
+        context.coordinator.setupView(mtkView: mtkView)
         return mtkView
     }
 
