@@ -8,8 +8,14 @@ The host app renderer.
 import Metal
 import MetalKit
 import ARKit
+import Foundation
+import UIKit
 
 final class Renderer {
+    // Whether recording is on
+    public var isRecording = false;
+    public var currentFolder = ""
+    
     // Maximum number of points we store in the point cloud
     private let maxPoints = 500_000
     // Number of sample points on the grid
@@ -192,6 +198,7 @@ final class Renderer {
         
         if shouldAccumulate(frame: currentFrame), updateDepthTextures(frame: currentFrame) {
             accumulatePoints(frame: currentFrame, commandBuffer: commandBuffer, renderEncoder: renderEncoder)
+            saveData(frame: currentFrame)
         }
         
         // check and render rgb camera image
@@ -223,7 +230,42 @@ final class Renderer {
         commandBuffer.commit()
     }
     
+    private func saveData(frame: ARFrame) {
+        struct DataPack: Codable {
+            var timestamp: Double
+            var cameraTransform: simd_float4x4 // The position and orientation of the camera in world coordinate space.
+            var cameraEulerAngles: simd_float3 // The orientation of the camera, expressed as roll, pitch, and yaw values.
+            var depthMap: [[Float32]]
+            var smoothedDepthMap: [[Float]]
+        }
+        
+        Task.init(priority: .utility) {
+            do {
+                let dataPack = await DataPack(
+                    timestamp: frame.timestamp,
+                    cameraTransform: frame.camera.transform,
+                    cameraEulerAngles: frame.camera.eulerAngles,
+                    depthMap: cvPixelBuffer2DepthMap(rawDepth: frame.sceneDepth!.depthMap),
+                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedSceneDepth!.depthMap)
+                )
+                
+                let jsonEncoder = JSONEncoder()
+                jsonEncoder.outputFormatting = .prettyPrinted
+            
+                let encoded = try jsonEncoder.encode(dataPack)
+                let encodedStr = String(data: encoded, encoding: .utf8)!
+                try await saveStr(content: encodedStr, filename: "\(frame.timestamp).json", folder: currentFolder)
+                try await savePic(pic: cvPixelBuffer2UIImage(pixelBuffer: frame.capturedImage), filename: "\(frame.timestamp).jpeg", folder: currentFolder)
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
     private func shouldAccumulate(frame: ARFrame) -> Bool {
+        if (!isRecording) {
+            return false
+        }
         let cameraTransform = frame.camera.transform
         return currentPointCount == 0
             || dot(cameraTransform.columns.2, lastCameraTransform.columns.2) <= cameraRotationThreshold

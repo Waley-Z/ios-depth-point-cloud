@@ -14,6 +14,9 @@ final class ViewController: UIViewController, ARSessionDelegate {
     private let isUIEnabled = true
     private let confidenceControl = UISegmentedControl(items: ["Low", "Medium", "High"])
     private let rgbRadiusSlider = UISlider()
+    private let recordButton = UIButton()
+    
+    private var isRecording = false
     
     private let session = ARSession()
     private var renderer: Renderer!
@@ -55,15 +58,22 @@ final class ViewController: UIViewController, ARSessionDelegate {
         rgbRadiusSlider.value = renderer.rgbRadius
         rgbRadiusSlider.addTarget(self, action: #selector(viewValueChanged), for: .valueChanged)
         
-        let stackView = UIStackView(arrangedSubviews: [confidenceControl, rgbRadiusSlider])
+        // UIButton
+//        recordButton.setImage(UIImage(contentsOfFile: "circle.inset.filled"), for: .normal)
+        recordButton.setTitle("START", for: .normal)
+        recordButton.backgroundColor = .systemBlue
+        recordButton.layer.cornerRadius = 5
+        recordButton.addTarget(self, action: #selector(onButtonClick), for: .touchUpInside)
+        
+        let stackView = UIStackView(arrangedSubviews: [confidenceControl, rgbRadiusSlider, recordButton])
         stackView.isHidden = !isUIEnabled
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
-        stackView.spacing = 20
+        stackView.spacing = 10
         view.addSubview(stackView)
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50)
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
         ])
     }
     
@@ -73,7 +83,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
         // Create a world-tracking configuration, and
         // enable the scene depth frame-semantic.
         let configuration = ARWorldTrackingConfiguration()
-        configuration.frameSemantics = .sceneDepth
+        configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
 
         // Run the view's session
         session.run(configuration)
@@ -95,6 +105,21 @@ final class ViewController: UIViewController, ARSessionDelegate {
         default:
             break
         }
+    }
+    
+    @objc
+    private func onButtonClick(_ sender: UIButton) {
+        isRecording = !isRecording
+        if (isRecording){
+            sender.setTitle("PAUSE", for: .normal)
+            sender.backgroundColor = .systemRed
+            renderer.currentFolder = getTimeStr()
+            createDirectory(folder: renderer.currentFolder)
+        } else {
+            sender.setTitle("START", for: .normal)
+            sender.backgroundColor = .systemBlue
+        }
+        renderer.isRecording = isRecording
     }
     
     // Auto-hide the home indicator to maximize immersion in AR experiences.
