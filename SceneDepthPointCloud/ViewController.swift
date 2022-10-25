@@ -1,9 +1,9 @@
 /*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-Main view controller for the AR experience.
-*/
+ See LICENSE folder for this sample’s licensing information.
+ 
+ Abstract:
+ Main view controller for the AR experience.
+ */
 
 import UIKit
 import Metal
@@ -15,8 +15,12 @@ final class ViewController: UIViewController, ARSessionDelegate {
     private let confidenceControl = UISegmentedControl(items: ["Low", "Medium", "High"])
     private let rgbRadiusSlider = UISlider()
     private let recordButton = UIButton()
+    private let textLabel = UILabel()
     
     private var isRecording = false
+    
+    private var taskNum = 0;
+    private var completedTaskNum = 0;
     
     private let session = ARSession()
     private var renderer: Renderer!
@@ -44,6 +48,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
             // Configure the renderer to draw to the view
             renderer = Renderer(session: session, metalDevice: device, renderDestination: view)
             renderer.drawRectResized(size: view.bounds.size)
+            renderer.delegate = self
         }
         
         // Confidence control
@@ -64,15 +69,30 @@ final class ViewController: UIViewController, ARSessionDelegate {
         recordButton.layer.cornerRadius = 5
         recordButton.addTarget(self, action: #selector(onButtonClick), for: .touchUpInside)
         
+        // UILabel
+        textLabel.text = "  Files saved 0/0  "
+        textLabel.textColor = .white
+        textLabel.backgroundColor = UIColor.darkGray.withAlphaComponent(0.5)
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        textLabel.layer.masksToBounds = true
+        textLabel.layer.cornerRadius = 8
+//        textLabel.textAlignment = .right
+        textLabel.sizeToFit()
+        
         let stackView = UIStackView(arrangedSubviews: [confidenceControl, rgbRadiusSlider, recordButton])
         stackView.isHidden = !isUIEnabled
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
         stackView.spacing = 10
         view.addSubview(stackView)
+        view.addSubview(textLabel)
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            textLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            textLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
+            textLabel.heightAnchor.constraint(equalToConstant: 30),
+//            textLabel.widthAnchor.constraint(equalToConstant: 200)
         ])
     }
     
@@ -83,7 +103,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
         // enable the scene depth frame-semantic.
         let configuration = ARWorldTrackingConfiguration()
         configuration.frameSemantics = [.sceneDepth, .smoothedSceneDepth]
-
+        
         // Run the view's session
         session.run(configuration)
         
@@ -100,9 +120,9 @@ final class ViewController: UIViewController, ARSessionDelegate {
     }
     
     private func memoryAlert() {
-        let alert = UIAlertController(title: "Low Memory Warning", message: "The recording has been paused. Do not quit the app. Start again in a few minutes.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Low Memory Warning", message: "The recording has been paused. Do not quit the app until all files have been saved.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Default action"), style: .default, handler: { _ in
-        NSLog("The \"OK\" alert occured.")
+            NSLog("The \"OK\" alert occured.")
         }))
         self.present(alert, animated: true, completion: nil)
     }
@@ -176,6 +196,26 @@ final class ViewController: UIViewController, ARSessionDelegate {
             }
             alertController.addAction(restartAction)
             self.present(alertController, animated: true, completion: nil)
+        }
+    }
+}
+
+// update textlabel on tasks start/finish
+extension ViewController: TaskDelegate {
+    func didStartTask() {
+        self.taskNum += 1
+        updateTextLabel()
+    }
+    
+    func didFinishTask() {
+        self.completedTaskNum += 1
+        updateTextLabel()
+    }
+    
+    private func updateTextLabel() {
+        let text = "  Files saved \(self.completedTaskNum)/\(self.taskNum)  "
+        DispatchQueue.main.async {
+            self.textLabel.text = text
         }
     }
 }

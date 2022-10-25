@@ -1,9 +1,9 @@
 /*
-See LICENSE folder for this sample’s licensing information.
-
-Abstract:
-The host app renderer.
-*/
+ See LICENSE folder for this sample’s licensing information.
+ 
+ Abstract:
+ The host app renderer.
+ */
 
 import Metal
 import MetalKit
@@ -16,6 +16,8 @@ final class Renderer {
     public var isRecording = false;
     // Current folder for saving data
     public var currentFolder = ""
+    // Task delegate for informing ViewController of tasks
+    public weak var delegate: TaskDelegate?
     
     // Maximum number of points we store in the point cloud
     private let maxPoints = 500_000
@@ -140,7 +142,7 @@ final class Renderer {
     func drawRectResized(size: CGSize) {
         viewportSize = size
     }
-   
+    
     private func updateCapturedImageTextures(frame: ARFrame) {
         // Create two textures (Y and CbCr) from the provided frame's captured image
         let pixelBuffer = frame.capturedImage
@@ -154,8 +156,8 @@ final class Renderer {
     
     private func updateDepthTextures(frame: ARFrame) -> Bool {
         guard let depthMap = frame.sceneDepth?.depthMap,
-            let confidenceMap = frame.sceneDepth?.confidenceMap else {
-                return false
+              let confidenceMap = frame.sceneDepth?.confidenceMap else {
+            return false
         }
         
         depthTexture = makeTexture(fromPixelBuffer: depthMap, pixelFormat: .r32Float, planeIndex: 0)
@@ -178,10 +180,10 @@ final class Renderer {
     
     func draw() {
         guard let currentFrame = session.currentFrame,
-            let renderDescriptor = renderDestination.currentRenderPassDescriptor,
-            let commandBuffer = commandQueue.makeCommandBuffer(),
-            let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {
-                return
+              let renderDescriptor = renderDestination.currentRenderPassDescriptor,
+              let commandBuffer = commandQueue.makeCommandBuffer(),
+              let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {
+            return
         }
         
         _ = inFlightSemaphore.wait(timeout: DispatchTime.distantFuture)
@@ -227,7 +229,7 @@ final class Renderer {
             renderEncoder.setFragmentTexture(CVMetalTextureGetTexture(capturedImageTextureCbCr!), index: Int(kTextureCbCr.rawValue))
             renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
         }
-       
+        
         // render particles
         renderEncoder.setDepthStencilState(depthStencilState)
         renderEncoder.setRenderPipelineState(particlePipelineState)
@@ -235,7 +237,7 @@ final class Renderer {
         renderEncoder.setVertexBuffer(particlesBuffer)
         renderEncoder.drawPrimitives(type: .point, vertexStart: 0, vertexCount: currentPointCount)
         renderEncoder.endEncoding()
-            
+        
         commandBuffer.present(renderDestination.currentDrawable!)
         commandBuffer.commit()
     }
@@ -260,6 +262,7 @@ final class Renderer {
             var smoothedDepthMap: [[Float]]
         }
         
+        delegate?.didStartTask()
         Task.init(priority: .utility) {
             do {
                 let dataPack = await DataPack(
@@ -272,11 +275,12 @@ final class Renderer {
                 
                 let jsonEncoder = JSONEncoder()
                 jsonEncoder.outputFormatting = .prettyPrinted
-            
+                
                 let encoded = try jsonEncoder.encode(dataPack)
                 let encodedStr = String(data: encoded, encoding: .utf8)!
                 try await saveFile(content: encodedStr, filename: "\(frame.timestamp).json", folder: currentFolder)
                 try await savePic(pic: cvPixelBuffer2UIImage(pixelBuffer: frame.capturedImage), filename: "\(frame.timestamp).jpeg", folder: currentFolder)
+                delegate?.didFinishTask()
             } catch {
                 print(error.localizedDescription)
             }
@@ -285,6 +289,7 @@ final class Renderer {
     
     /// Save all particles to a point cloud file in ply format.
     func savePointCloud() {
+        delegate?.didStartTask()
         Task.init(priority: .utility) {
             do {
                 var fileToWrite = ""
@@ -306,9 +311,10 @@ final class Renderer {
                     fileToWrite += pvValue
                     fileToWrite += "\r\n"
                 }
-
+                
                 try await saveFile(content: fileToWrite, filename: "\(getTimeStr()).ply", folder: currentFolder)
                 
+                delegate?.didFinishTask()
             } catch {
                 print(error.localizedDescription)
             }
@@ -321,8 +327,8 @@ final class Renderer {
         }
         let cameraTransform = frame.camera.transform
         return currentPointCount == 0
-            || dot(cameraTransform.columns.2, lastCameraTransform.columns.2) <= cameraRotationThreshold
-            || distance_squared(cameraTransform.columns.3, lastCameraTransform.columns.3) >= cameraTranslationThreshold
+        || dot(cameraTransform.columns.2, lastCameraTransform.columns.2) <= cameraRotationThreshold
+        || distance_squared(cameraTransform.columns.3, lastCameraTransform.columns.3) >= cameraTranslationThreshold
     }
     
     private func accumulatePoints(frame: ARFrame, commandBuffer: MTLCommandBuffer, renderEncoder: MTLRenderCommandEncoder) {
@@ -355,7 +361,7 @@ final class Renderer {
 private extension Renderer {
     func makeUnprojectionPipelineState() -> MTLRenderPipelineState? {
         guard let vertexFunction = library.makeFunction(name: "unprojectVertex") else {
-                return nil
+            return nil
         }
         
         let descriptor = MTLRenderPipelineDescriptor()
@@ -369,8 +375,8 @@ private extension Renderer {
     
     func makeRGBPipelineState() -> MTLRenderPipelineState? {
         guard let vertexFunction = library.makeFunction(name: "rgbVertex"),
-            let fragmentFunction = library.makeFunction(name: "rgbFragment") else {
-                return nil
+              let fragmentFunction = library.makeFunction(name: "rgbFragment") else {
+            return nil
         }
         
         let descriptor = MTLRenderPipelineDescriptor()
@@ -384,8 +390,8 @@ private extension Renderer {
     
     func makeParticlePipelineState() -> MTLRenderPipelineState? {
         guard let vertexFunction = library.makeFunction(name: "particleVertex"),
-            let fragmentFunction = library.makeFunction(name: "particleFragment") else {
-                return nil
+              let fragmentFunction = library.makeFunction(name: "particleFragment") else {
+            return nil
         }
         
         let descriptor = MTLRenderPipelineDescriptor()
@@ -439,7 +445,7 @@ private extension Renderer {
         if status != kCVReturnSuccess {
             texture = nil
         }
-
+        
         return texture
     }
     
@@ -463,7 +469,7 @@ private extension Renderer {
             [0, -1, 0, 0],
             [0, 0, -1, 0],
             [0, 0, 0, 1] )
-
+        
         let rotationAngle = Float(cameraToDisplayRotation(orientation: orientation)) * .degreesToRadian
         return flipYZ * matrix_float4x4(simd_quaternion(rotationAngle, Float3(0, 0, 1)))
     }

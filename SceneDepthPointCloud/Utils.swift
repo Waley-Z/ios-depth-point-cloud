@@ -129,3 +129,9 @@ extension CVPixelBuffer
         return copy
     }
 }
+
+/// Send task start/finish messages.
+protocol TaskDelegate: AnyObject {
+    func didStartTask()
+    func didFinishTask()
+}
