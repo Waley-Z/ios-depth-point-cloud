@@ -14,6 +14,7 @@ import UIKit
 final class Renderer {
     // Whether recording is on
     public var isRecording = false;
+    // Current folder for saving data
     public var currentFolder = ""
     
     // Maximum number of points we store in the point cloud
@@ -71,6 +72,7 @@ final class Renderer {
     }()
     private var rgbUniformsBuffers = [MetalBuffer<RGBUniforms>]()
     // Point Cloud buffer
+    // This is not the point cloud data, but some parameters
     private lazy var pointCloudUniforms: PointCloudUniforms = {
         var uniforms = PointCloudUniforms()
         uniforms.maxPoints = Int32(maxPoints)
@@ -81,6 +83,7 @@ final class Renderer {
     }()
     private var pointCloudUniformsBuffers = [MetalBuffer<PointCloudUniforms>]()
     // Particles buffer
+    // Saves the point cloud data, filled by unprojectVertex func in Shaders.metal
     private var particlesBuffer: MetalBuffer<ParticleUniforms>
     private var currentPointIndex = 0
     private var currentPointCount = 0
@@ -198,7 +201,14 @@ final class Renderer {
         
         if shouldAccumulate(frame: currentFrame), updateDepthTextures(frame: currentFrame) {
             accumulatePoints(frame: currentFrame, commandBuffer: commandBuffer, renderEncoder: renderEncoder)
-            saveData(frame: currentFrame)
+            
+            // save selected data to disk
+            autoreleasepool {
+                // selected data are deep copied into custom struct to release currentFrame
+                // if not, the pools of memory reserved for ARFrame will be full and later frames will be dropped
+                let data = ARFrameDataPack(timestamp: currentFrame.timestamp, cameraTransform: currentFrame.camera.transform, cameraEulerAngles: currentFrame.camera.eulerAngles, depthMap: currentFrame.sceneDepth!.depthMap.copy(), smoothedDepthMap: currentFrame.smoothedSceneDepth!.depthMap.copy(), capturedImage: currentFrame.capturedImage.copy())
+                saveData(frame: data)
+            }
         }
         
         // check and render rgb camera image
@@ -230,7 +240,18 @@ final class Renderer {
         commandBuffer.commit()
     }
     
-    private func saveData(frame: ARFrame) {
+    // custom struct for pulling necessary data from arframes
+    struct ARFrameDataPack {
+        var timestamp: Double
+        var cameraTransform: simd_float4x4
+        var cameraEulerAngles: simd_float3
+        var depthMap: CVPixelBuffer
+        var smoothedDepthMap: CVPixelBuffer
+        var capturedImage: CVPixelBuffer
+    }
+    
+    /// Save data to disk in json and jpeg formats.
+    private func saveData(frame: ARFrameDataPack) {
         struct DataPack: Codable {
             var timestamp: Double
             var cameraTransform: simd_float4x4 // The position and orientation of the camera in world coordinate space.
@@ -243,10 +264,10 @@ final class Renderer {
             do {
                 let dataPack = await DataPack(
                     timestamp: frame.timestamp,
-                    cameraTransform: frame.camera.transform,
-                    cameraEulerAngles: frame.camera.eulerAngles,
-                    depthMap: cvPixelBuffer2DepthMap(rawDepth: frame.sceneDepth!.depthMap),
-                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedSceneDepth!.depthMap)
+                    cameraTransform: frame.cameraTransform,
+                    cameraEulerAngles: frame.cameraEulerAngles,
+                    depthMap: cvPixelBuffer2DepthMap(rawDepth: frame.depthMap),
+                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedDepthMap)
                 )
                 
                 let jsonEncoder = JSONEncoder()
@@ -254,8 +275,40 @@ final class Renderer {
             
                 let encoded = try jsonEncoder.encode(dataPack)
                 let encodedStr = String(data: encoded, encoding: .utf8)!
-                try await saveStr(content: encodedStr, filename: "\(frame.timestamp).json", folder: currentFolder)
+                try await saveFile(content: encodedStr, filename: "\(frame.timestamp).json", folder: currentFolder)
                 try await savePic(pic: cvPixelBuffer2UIImage(pixelBuffer: frame.capturedImage), filename: "\(frame.timestamp).jpeg", folder: currentFolder)
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    /// Save all particles to a point cloud file in ply format.
+    func savePointCloud() {
+        Task.init(priority: .utility) {
+            do {
+                var fileToWrite = ""
+                let headers = ["ply", "format ascii 1.0", "element vertex \(currentPointCount)", "property float x", "property float y", "property float z", "property uchar red", "property uchar green", "property uchar blue", "element face 0", "property list uchar int vertex_indices", "end_header"]
+                for header in headers {
+                    fileToWrite += header
+                    fileToWrite += "\r\n"
+                }
+                
+                for i in 0..<currentPointCount {
+                    let point = particlesBuffer[i]
+                    let colors = point.color
+                    
+                    let red = colors.x * 255.0
+                    let green = colors.y * 255.0
+                    let blue = colors.z * 255.0
+                    
+                    let pvValue = "\(point.position.x) \(point.position.y) \(point.position.z) \(Int(red)) \(Int(green)) \(Int(blue))"
+                    fileToWrite += pvValue
+                    fileToWrite += "\r\n"
+                }
+
+                try await saveFile(content: fileToWrite, filename: "\(getTimeStr()).ply", folder: currentFolder)
+                
             } catch {
                 print(error.localizedDescription)
             }

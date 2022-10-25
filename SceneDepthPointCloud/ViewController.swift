@@ -59,7 +59,6 @@ final class ViewController: UIViewController, ARSessionDelegate {
         rgbRadiusSlider.addTarget(self, action: #selector(viewValueChanged), for: .valueChanged)
         
         // UIButton
-//        recordButton.setImage(UIImage(contentsOfFile: "circle.inset.filled"), for: .normal)
         recordButton.setTitle("START", for: .normal)
         recordButton.backgroundColor = .systemBlue
         recordButton.layer.cornerRadius = 5
@@ -92,6 +91,22 @@ final class ViewController: UIViewController, ARSessionDelegate {
         UIApplication.shared.isIdleTimerDisabled = true
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        
+        print("memory warning!!!")
+        memoryAlert()
+        updateIsRecording(_isRecording: false)
+    }
+    
+    private func memoryAlert() {
+        let alert = UIAlertController(title: "Low Memory Warning", message: "The recording has been paused. Do not quit the app. Start again in a few minutes.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: "Default action"), style: .default, handler: { _ in
+        NSLog("The \"OK\" alert occured.")
+        }))
+        self.present(alert, animated: true, completion: nil)
+    }
+    
     @objc
     private func viewValueChanged(view: UIView) {
         switch view {
@@ -109,15 +124,23 @@ final class ViewController: UIViewController, ARSessionDelegate {
     
     @objc
     private func onButtonClick(_ sender: UIButton) {
-        isRecording = !isRecording
+        if (sender != recordButton) {
+            return
+        }
+        updateIsRecording(_isRecording: !isRecording)
+    }
+    
+    private func updateIsRecording(_isRecording: Bool) {
+        isRecording = _isRecording
         if (isRecording){
-            sender.setTitle("PAUSE", for: .normal)
-            sender.backgroundColor = .systemRed
+            recordButton.setTitle("PAUSE", for: .normal)
+            recordButton.backgroundColor = .systemRed
             renderer.currentFolder = getTimeStr()
             createDirectory(folder: renderer.currentFolder)
         } else {
-            sender.setTitle("START", for: .normal)
-            sender.backgroundColor = .systemBlue
+            recordButton.setTitle("START", for: .normal)
+            recordButton.backgroundColor = .systemBlue
+            renderer.savePointCloud()
         }
         renderer.isRecording = isRecording
     }
