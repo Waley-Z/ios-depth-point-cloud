@@ -78,6 +78,7 @@ func createDirectory(folder: String) {
     
 }
 
+/// https://stackoverflow.com/questions/63661474/how-can-i-encode-an-array-of-simd-float4x4-elements-in-swift-convert-simd-float
 extension simd_float4x4: Codable {
     public init(from decoder: Decoder) throws {
         var container = try decoder.unkeyedContainer()
@@ -89,7 +90,18 @@ extension simd_float4x4: Codable {
     }
 }
 
-/// Deep copy a CVPixelBuffer:
+extension simd_float3x3: Codable {
+    public init(from decoder: Decoder) throws {
+        var container = try decoder.unkeyedContainer()
+        try self.init(container.decode([SIMD3<Float>].self))
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.unkeyedContainer()
+        try container.encode([columns.0, columns.1, columns.2])
+    }
+}
+
+/// Deep copy a CVPixelBuffer for image (not working on depth data)
 /// http://stackoverflow.com/questions/38335365/pulling-data-from-a-cmsamplebuffer-in-order-to-create-a-deep-copy
 extension CVPixelBuffer
 {
@@ -134,4 +146,28 @@ extension CVPixelBuffer
 protocol TaskDelegate: AnyObject {
     func didStartTask()
     func didFinishTask()
+}
+
+/// Deep copy CVPixelBuffer for depth data
+/// https://stackoverflow.com/questions/65868215/deep-copy-cvpixelbuffer-for-depth-data-in-swift
+func duplicatePixelBuffer(input: CVPixelBuffer) -> CVPixelBuffer {
+    var copyOut: CVPixelBuffer?
+    let bufferWidth = CVPixelBufferGetWidth(input)
+    let bufferHeight = CVPixelBufferGetHeight(input)
+    let bytesPerRow = CVPixelBufferGetBytesPerRow(input)
+    let bufferFormat = CVPixelBufferGetPixelFormatType(input)
+        
+    _ = CVPixelBufferCreate(kCFAllocatorDefault, bufferWidth, bufferHeight, bufferFormat, CVBufferGetAttachments(input, CVAttachmentMode.shouldPropagate), &copyOut)
+    let output = copyOut!
+    // Lock the depth map base address before accessing it
+    CVPixelBufferLockBaseAddress(input, CVPixelBufferLockFlags.readOnly)
+    CVPixelBufferLockBaseAddress(output, CVPixelBufferLockFlags(rawValue: 0))
+    let baseAddress = CVPixelBufferGetBaseAddress(input)
+    let baseAddressCopy = CVPixelBufferGetBaseAddress(output)
+    memcpy(baseAddressCopy, baseAddress, bufferHeight * bytesPerRow)
+        
+    // Unlock the base address when finished accessing the buffer
+    CVPixelBufferUnlockBaseAddress(input, CVPixelBufferLockFlags.readOnly)
+    CVPixelBufferUnlockBaseAddress(output, CVPixelBufferLockFlags(rawValue: 0))
+    return output
 }

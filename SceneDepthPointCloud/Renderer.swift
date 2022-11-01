@@ -208,7 +208,16 @@ final class Renderer {
             autoreleasepool {
                 // selected data are deep copied into custom struct to release currentFrame
                 // if not, the pools of memory reserved for ARFrame will be full and later frames will be dropped
-                let data = ARFrameDataPack(timestamp: currentFrame.timestamp, cameraTransform: currentFrame.camera.transform, cameraEulerAngles: currentFrame.camera.eulerAngles, depthMap: currentFrame.sceneDepth!.depthMap.copy(), smoothedDepthMap: currentFrame.smoothedSceneDepth!.depthMap.copy(), capturedImage: currentFrame.capturedImage.copy())
+                let data = ARFrameDataPack(
+                    timestamp: currentFrame.timestamp,
+                    cameraTransform: currentFrame.camera.transform,
+                    cameraEulerAngles: currentFrame.camera.eulerAngles,
+                    depthMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.depthMap),
+                    smoothedDepthMap: duplicatePixelBuffer(input: currentFrame.smoothedSceneDepth!.depthMap),
+                    capturedImage: currentFrame.capturedImage.copy(),
+                    localToWorld: pointCloudUniforms.localToWorld,
+                    cameraIntrinsicsInversed: pointCloudUniforms.cameraIntrinsicsInversed
+                )
                 saveData(frame: data)
             }
         }
@@ -250,6 +259,8 @@ final class Renderer {
         var depthMap: CVPixelBuffer
         var smoothedDepthMap: CVPixelBuffer
         var capturedImage: CVPixelBuffer
+        var localToWorld: simd_float4x4
+        var cameraIntrinsicsInversed: simd_float3x3
     }
     
     /// Save data to disk in json and jpeg formats.
@@ -260,6 +271,8 @@ final class Renderer {
             var cameraEulerAngles: simd_float3 // The orientation of the camera, expressed as roll, pitch, and yaw values.
             var depthMap: [[Float32]]
             var smoothedDepthMap: [[Float]]
+            var localToWorld: simd_float4x4
+            var cameraIntrinsicsInversed: simd_float3x3
         }
         
         delegate?.didStartTask()
@@ -270,7 +283,9 @@ final class Renderer {
                     cameraTransform: frame.cameraTransform,
                     cameraEulerAngles: frame.cameraEulerAngles,
                     depthMap: cvPixelBuffer2DepthMap(rawDepth: frame.depthMap),
-                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedDepthMap)
+                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedDepthMap),
+                    localToWorld: frame.localToWorld,
+                    cameraIntrinsicsInversed: frame.cameraIntrinsicsInversed
                 )
                 
                 let jsonEncoder = JSONEncoder()

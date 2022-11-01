@@ -18,9 +18,11 @@ This project adds the following functions:
       var depthMap: CVPixelBuffer
       var smoothedDepthMap: CVPixelBuffer
       var capturedImage: CVPixelBuffer
+      var localToWorld: simd_float4x4
+      var cameraIntrinsicsInversed: simd_float3x3
   }
   ```
-
+  
   The captured images are stored in `jpeg` format and others are coded into `json` files. They can be retrieved in Finder with USB connection. Those raw data make it possible to leverage photogrammetry techniques for various tasks.
 
 <p align="center">
