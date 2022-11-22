@@ -31,24 +31,24 @@ func savePic(pic: UIImage, filename: String, folder: String) async throws -> () 
     try pic.jpegData(compressionQuality: 0)?.write(to: url)
 }
 
-/// Transform cvPixelBuffer to a 2D array depth map.
-func cvPixelBuffer2DepthMap(rawDepth: CVPixelBuffer) async -> [[Float32]] {
+/// Transform cvPixelBuffer of datatype <T> to a 2D array map.
+func cvPixelBuffer2Map<T : Numeric>(rawDepth: CVPixelBuffer) async -> [[T]] {
     CVPixelBufferLockBaseAddress(rawDepth, CVPixelBufferLockFlags(rawValue: 0))
     let addr = CVPixelBufferGetBaseAddress(rawDepth)
     let height = CVPixelBufferGetHeight(rawDepth)
     let width = CVPixelBufferGetWidth(rawDepth)
     
-    let floatBuffer = unsafeBitCast(addr, to: UnsafeMutablePointer<Float32>.self)
+    let TBuffer = unsafeBitCast(addr, to: UnsafeMutablePointer<T>.self)
     
-    var depthMap = Array(repeating: [Float32](repeating: 0, count: width), count: height)
+    var TMap : [[T]] = Array(repeating: Array(repeating: T(exactly: 0)!, count: width), count: height)
     
     for row in 0...(height - 1){
         for col in 0...(width - 1){
-            depthMap[row][col] = floatBuffer[row * width + col]
+            TMap[row][col] = TBuffer[row * width + col]
         }
     }
     CVPixelBufferUnlockBaseAddress(rawDepth, CVPixelBufferLockFlags(rawValue: 0))
-    return depthMap
+    return TMap
 }
 
 /// Transform cvPixelBuffer to a UIImage.
@@ -101,47 +101,6 @@ extension simd_float3x3: Codable {
     }
 }
 
-/// Deep copy a CVPixelBuffer for image (not working on depth data)
-/// http://stackoverflow.com/questions/38335365/pulling-data-from-a-cmsamplebuffer-in-order-to-create-a-deep-copy
-extension CVPixelBuffer
-{
-    func copy() -> CVPixelBuffer {
-        precondition(CFGetTypeID(self) == CVPixelBufferGetTypeID(), "copy() cannot be called on a non-CVPixelBuffer")
-        
-        var _copy: CVPixelBuffer?
-        
-        CVPixelBufferCreate(
-            nil,
-            CVPixelBufferGetWidth(self),
-            CVPixelBufferGetHeight(self),
-            CVPixelBufferGetPixelFormatType(self),
-            CVBufferGetAttachments(self, .shouldPropagate),
-            &_copy)
-        
-        guard let copy = _copy else { fatalError() }
-        
-        CVPixelBufferLockBaseAddress(self, .readOnly)
-        CVPixelBufferLockBaseAddress(copy, [])
-        defer
-        {
-            CVPixelBufferUnlockBaseAddress(copy, [])
-            CVPixelBufferUnlockBaseAddress(self, .readOnly)
-        }
-        
-        for plane in 0 ..< CVPixelBufferGetPlaneCount(self)
-        {
-            let dest        = CVPixelBufferGetBaseAddressOfPlane(copy, plane)
-            let source      = CVPixelBufferGetBaseAddressOfPlane(self, plane)
-            let height      = CVPixelBufferGetHeightOfPlane(self, plane)
-            let bytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(self, plane)
-            
-            memcpy(dest, source, height * bytesPerRow)
-        }
-        
-        return copy
-    }
-}
-
 /// Send task start/finish messages.
 protocol TaskDelegate: AnyObject {
     func didStartTask()
@@ -156,7 +115,7 @@ func duplicatePixelBuffer(input: CVPixelBuffer) -> CVPixelBuffer {
     let bufferHeight = CVPixelBufferGetHeight(input)
     let bytesPerRow = CVPixelBufferGetBytesPerRow(input)
     let bufferFormat = CVPixelBufferGetPixelFormatType(input)
-        
+    
     _ = CVPixelBufferCreate(kCFAllocatorDefault, bufferWidth, bufferHeight, bufferFormat, CVBufferGetAttachments(input, CVAttachmentMode.shouldPropagate), &copyOut)
     let output = copyOut!
     // Lock the depth map base address before accessing it
@@ -165,7 +124,7 @@ func duplicatePixelBuffer(input: CVPixelBuffer) -> CVPixelBuffer {
     let baseAddress = CVPixelBufferGetBaseAddress(input)
     let baseAddressCopy = CVPixelBufferGetBaseAddress(output)
     memcpy(baseAddressCopy, baseAddress, bufferHeight * bytesPerRow)
-        
+    
     // Unlock the base address when finished accessing the buffer
     CVPixelBufferUnlockBaseAddress(input, CVPixelBufferLockFlags.readOnly)
     CVPixelBufferUnlockBaseAddress(output, CVPixelBufferLockFlags(rawValue: 0))

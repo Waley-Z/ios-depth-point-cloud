@@ -214,7 +214,8 @@ final class Renderer {
                     cameraEulerAngles: currentFrame.camera.eulerAngles,
                     depthMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.depthMap),
                     smoothedDepthMap: duplicatePixelBuffer(input: currentFrame.smoothedSceneDepth!.depthMap),
-                    capturedImage: currentFrame.capturedImage.copy(),
+                    confidenceMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.confidenceMap!),
+                    capturedImage: duplicatePixelBuffer(input: currentFrame.capturedImage),
                     localToWorld: pointCloudUniforms.localToWorld,
                     cameraIntrinsicsInversed: pointCloudUniforms.cameraIntrinsicsInversed
                 )
@@ -258,6 +259,7 @@ final class Renderer {
         var cameraEulerAngles: simd_float3
         var depthMap: CVPixelBuffer
         var smoothedDepthMap: CVPixelBuffer
+        var confidenceMap: CVPixelBuffer
         var capturedImage: CVPixelBuffer
         var localToWorld: simd_float4x4
         var cameraIntrinsicsInversed: simd_float3x3
@@ -270,7 +272,8 @@ final class Renderer {
             var cameraTransform: simd_float4x4 // The position and orientation of the camera in world coordinate space.
             var cameraEulerAngles: simd_float3 // The orientation of the camera, expressed as roll, pitch, and yaw values.
             var depthMap: [[Float32]]
-            var smoothedDepthMap: [[Float]]
+            var smoothedDepthMap: [[Float32]]
+            var confidenceMap: [[UInt8]]
             var localToWorld: simd_float4x4
             var cameraIntrinsicsInversed: simd_float3x3
         }
@@ -282,8 +285,9 @@ final class Renderer {
                     timestamp: frame.timestamp,
                     cameraTransform: frame.cameraTransform,
                     cameraEulerAngles: frame.cameraEulerAngles,
-                    depthMap: cvPixelBuffer2DepthMap(rawDepth: frame.depthMap),
-                    smoothedDepthMap: cvPixelBuffer2DepthMap(rawDepth: frame.smoothedDepthMap),
+                    depthMap: cvPixelBuffer2Map(rawDepth: frame.depthMap),
+                    smoothedDepthMap: cvPixelBuffer2Map(rawDepth: frame.smoothedDepthMap),
+                    confidenceMap: cvPixelBuffer2Map(rawDepth: frame.confidenceMap),
                     localToWorld: frame.localToWorld,
                     cameraIntrinsicsInversed: frame.cameraIntrinsicsInversed
                 )

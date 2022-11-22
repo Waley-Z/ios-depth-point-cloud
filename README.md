@@ -17,6 +17,7 @@ This project adds the following functions:
       var cameraEulerAngles: simd_float3
       var depthMap: CVPixelBuffer
       var smoothedDepthMap: CVPixelBuffer
+      var confidenceMap: CVPixelBuffer
       var capturedImage: CVPixelBuffer
       var localToWorld: simd_float4x4
       var cameraIntrinsicsInversed: simd_float3x3
