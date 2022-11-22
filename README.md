@@ -24,7 +24,22 @@ This project adds the following functions:
   }
   ```
   
-  The captured images are stored in `jpeg` format and others are coded into `json` files. They can be retrieved in Finder with USB connection. Those raw data make it possible to leverage photogrammetry techniques for various tasks.
+  The captured images are stored in `jpeg` format and others are coded into `json` files of which the format is specified as below.
+  
+  ```swift
+  struct DataPack: Codable {
+      var timestamp: Double
+      var cameraTransform: simd_float4x4 // The position and orientation of the camera in world coordinate space.
+      var cameraEulerAngles: simd_float3 // The orientation of the camera, expressed as roll, pitch, and yaw values.
+      var depthMap: [[Float32]]
+      var smoothedDepthMap: [[Float32]]
+      var confidenceMap: [[UInt8]]
+      var localToWorld: simd_float4x4
+      var cameraIntrinsicsInversed: simd_float3x3
+  }
+  ```
+  
+  They can be retrieved in Finder with USB connection. Those raw data make it possible to leverage photogrammetry techniques for various tasks.
 
 <p align="center">
   <img src="README.assets/image-20221025144805695.png" width=50%/>
