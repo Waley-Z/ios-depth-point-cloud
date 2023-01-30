@@ -156,7 +156,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
             recordButton.setTitle("PAUSE", for: .normal)
             recordButton.backgroundColor = .systemRed
             renderer.currentFolder = getTimeStr()
-            createDirectory(folder: renderer.currentFolder)
+            createDirectory(folder: renderer.currentFolder + "/data")
         } else {
             recordButton.setTitle("START", for: .normal)
             recordButton.backgroundColor = .systemBlue
