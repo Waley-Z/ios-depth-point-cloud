@@ -53,8 +53,14 @@ func cvPixelBuffer2Map<T : Numeric>(rawDepth: CVPixelBuffer) async -> [[T]] {
 
 /// Transform cvPixelBuffer to a UIImage.
 func cvPixelBuffer2UIImage(pixelBuffer: CVPixelBuffer) -> UIImage {
-    let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-    return UIImage(ciImage: ciImage)
+    var cgImage: CGImage?
+    VTCreateCGImageFromCVPixelBuffer(pixelBuffer, options: nil, imageOut: &cgImage)
+    guard let cgImage = cgImage else {
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        print("error transforming CVPixelBuffer to UIImage using VTCreateCGImageFromCVPixelBuffer")
+        return UIImage(ciImage: ciImage)
+    }
+    return UIImage(cgImage: cgImage)
 }
 
 func getDocumentsDirectory() -> URL {
