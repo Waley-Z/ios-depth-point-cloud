@@ -17,7 +17,7 @@ final class Renderer {
     // Current folder for saving data
     public var currentFolder = ""
     // Pick every n frames (~1/sampling frequency)
-    public var pickFrames = 2 // default to save half of the new frames
+    public var pickFrames = 5 // default to save 1/5 of the new frames
     public var currentFrameIndex = 0;
     // Task delegate for informing ViewController of tasks
     public weak var delegate: TaskDelegate?
@@ -204,25 +204,27 @@ final class Renderer {
         currentBufferIndex = (currentBufferIndex + 1) % maxInFlightBuffers
         pointCloudUniformsBuffers[currentBufferIndex][0] = pointCloudUniforms
         
-        if shouldAccumulate(frame: currentFrame), checkSamplingRate(), updateDepthTextures(frame: currentFrame) {
+        if shouldAccumulate(frame: currentFrame), updateDepthTextures(frame: currentFrame) {
             accumulatePoints(frame: currentFrame, commandBuffer: commandBuffer, renderEncoder: renderEncoder)
             
-            // save selected data to disk
-            autoreleasepool {
-                // selected data are deep copied into custom struct to release currentFrame
-                // if not, the pools of memory reserved for ARFrame will be full and later frames will be dropped
-                let data = ARFrameDataPack(
-                    timestamp: currentFrame.timestamp,
-                    cameraTransform: currentFrame.camera.transform,
-                    cameraEulerAngles: currentFrame.camera.eulerAngles,
-                    depthMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.depthMap),
-                    smoothedDepthMap: duplicatePixelBuffer(input: currentFrame.smoothedSceneDepth!.depthMap),
-                    confidenceMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.confidenceMap!),
-                    capturedImage: duplicatePixelBuffer(input: currentFrame.capturedImage),
-                    localToWorld: pointCloudUniforms.localToWorld,
-                    cameraIntrinsicsInversed: pointCloudUniforms.cameraIntrinsicsInversed
-                )
-                saveData(frame: data)
+            if (checkSamplingRate()) {
+                // save selected data to disk if not dropped
+                autoreleasepool {
+                    // selected data are deep copied into custom struct to release currentFrame
+                    // if not, the pools of memory reserved for ARFrame will be full and later frames will be dropped
+                    let data = ARFrameDataPack(
+                        timestamp: currentFrame.timestamp,
+                        cameraTransform: currentFrame.camera.transform,
+                        cameraEulerAngles: currentFrame.camera.eulerAngles,
+                        depthMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.depthMap),
+                        smoothedDepthMap: duplicatePixelBuffer(input: currentFrame.smoothedSceneDepth!.depthMap),
+                        confidenceMap: duplicatePixelBuffer(input: currentFrame.sceneDepth!.confidenceMap!),
+                        capturedImage: duplicatePixelBuffer(input: currentFrame.capturedImage),
+                        localToWorld: pointCloudUniforms.localToWorld,
+                        cameraIntrinsicsInversed: pointCloudUniforms.cameraIntrinsicsInversed
+                    )
+                    saveData(frame: data)
+                }
             }
         }
         

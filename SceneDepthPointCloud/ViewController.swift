@@ -78,7 +78,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
         recordButton.addTarget(self, action: #selector(onButtonClick), for: .touchUpInside)
         
         // UILabel
-        textLabel.text = "  1/2 of new frames  \n  Files saved 0/0  "
+        textLabel.text = "  1/5 of new frames  \n  Files saved 0/0  "
         textLabel.textColor = .white
         textLabel.backgroundColor = UIColor.darkGray.withAlphaComponent(0.5)
         textLabel.translatesAutoresizingMaskIntoConstraints = false

@@ -25,7 +25,7 @@ This project adds the following functions:
   }
   ```
   
-  The sampling rate is controlled by a slider. One of every `n` *new* frames will be saved. The current sampling rate will be indicated in the filename, i.e. `{timestamp}_{samplingRate}.[json|jpeg]`.
+  The sampling rate is controlled by a slider. One of every `n` *new* frames will be saved. The current sampling rate will be indicated in the filename, i.e. `{timestamp}_{samplingRate}.[json|jpeg]`. Please note that *all* frames will contribute to the point cloud as well as AR display. In other words, all the points in AR will be saved to `PLY` point cloud file but only `1/n` of them will be saved as `json` and `jpeg`.
   
   The captured images are stored in `jpeg` format and others are coded into `json` files of which the format is specified as below.
   
@@ -50,7 +50,7 @@ This project adds the following functions:
 
 
 
-* Save the point cloud in PLY format when the recording is stopped.
+* Save the point cloud in `PLY` format when the recording is stopped.
 
   <p align="center">
     <img src="README.assets/image-20221025145702567.png" width=60%/>
