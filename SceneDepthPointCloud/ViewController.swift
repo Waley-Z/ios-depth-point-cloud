@@ -14,6 +14,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
     private let isUIEnabled = true
     private let confidenceControl = UISegmentedControl(items: ["Low", "Medium", "High"])
     private let rgbRadiusSlider = UISlider()
+    private let pickFramesSlider = UISlider()
     private let recordButton = UIButton()
     private let textLabel = UILabel()
     
@@ -62,7 +63,14 @@ final class ViewController: UIViewController, ARSessionDelegate {
         rgbRadiusSlider.isContinuous = true
         rgbRadiusSlider.value = renderer.rgbRadius
         rgbRadiusSlider.addTarget(self, action: #selector(viewValueChanged), for: .valueChanged)
-        
+
+        // Pick every x Frames control
+        pickFramesSlider.minimumValue = 1
+        pickFramesSlider.maximumValue = 50
+        pickFramesSlider.isContinuous = true
+        pickFramesSlider.value = Float(renderer.pickFrames)
+        pickFramesSlider.addTarget(self, action: #selector(viewValueChanged), for: .valueChanged)
+
         // UIButton
         recordButton.setTitle("START", for: .normal)
         recordButton.backgroundColor = .systemBlue
@@ -70,7 +78,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
         recordButton.addTarget(self, action: #selector(onButtonClick), for: .touchUpInside)
         
         // UILabel
-        textLabel.text = "  Files saved 0/0  "
+        textLabel.text = "  1/2 of new frames  \n  Files saved 0/0  "
         textLabel.textColor = .white
         textLabel.backgroundColor = UIColor.darkGray.withAlphaComponent(0.5)
         textLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -78,8 +86,10 @@ final class ViewController: UIViewController, ARSessionDelegate {
         textLabel.layer.cornerRadius = 8
 //        textLabel.textAlignment = .right
         textLabel.sizeToFit()
+        textLabel.numberOfLines = 2
         
-        let stackView = UIStackView(arrangedSubviews: [confidenceControl, rgbRadiusSlider, recordButton])
+        let stackView = UIStackView(arrangedSubviews: [
+            confidenceControl, rgbRadiusSlider, pickFramesSlider, recordButton])
         stackView.isHidden = !isUIEnabled
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
@@ -91,7 +101,7 @@ final class ViewController: UIViewController, ARSessionDelegate {
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
             textLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             textLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20),
-            textLabel.heightAnchor.constraint(equalToConstant: 30),
+            textLabel.heightAnchor.constraint(equalToConstant: 50),
 //            textLabel.widthAnchor.constraint(equalToConstant: 200)
         ])
     }
@@ -137,6 +147,10 @@ final class ViewController: UIViewController, ARSessionDelegate {
         case rgbRadiusSlider:
             renderer.rgbRadius = rgbRadiusSlider.value
             
+        case pickFramesSlider:
+            renderer.pickFrames = Int(pickFramesSlider.value)
+            updateTextLabel()
+
         default:
             break
         }
@@ -213,7 +227,7 @@ extension ViewController: TaskDelegate {
     }
     
     private func updateTextLabel() {
-        let text = "  Files saved \(self.completedTaskNum)/\(self.taskNum)  "
+        let text = "  1/\(self.renderer.pickFrames)  of new frames  \n  Files saved \(self.completedTaskNum)/\(self.taskNum)  "
         DispatchQueue.main.async {
             self.textLabel.text = text
         }

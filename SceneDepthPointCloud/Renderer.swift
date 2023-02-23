@@ -16,6 +16,9 @@ final class Renderer {
     public var isRecording = false;
     // Current folder for saving data
     public var currentFolder = ""
+    // Pick every n frames (~1/sampling frequency)
+    public var pickFrames = 2 // default to save half of the new frames
+    public var currentFrameIndex = 0;
     // Task delegate for informing ViewController of tasks
     public weak var delegate: TaskDelegate?
     
@@ -201,7 +204,7 @@ final class Renderer {
         currentBufferIndex = (currentBufferIndex + 1) % maxInFlightBuffers
         pointCloudUniformsBuffers[currentBufferIndex][0] = pointCloudUniforms
         
-        if shouldAccumulate(frame: currentFrame), updateDepthTextures(frame: currentFrame) {
+        if shouldAccumulate(frame: currentFrame), checkSamplingRate(), updateDepthTextures(frame: currentFrame) {
             accumulatePoints(frame: currentFrame, commandBuffer: commandBuffer, renderEncoder: renderEncoder)
             
             // save selected data to disk
@@ -348,6 +351,12 @@ final class Renderer {
         return currentPointCount == 0
         || dot(cameraTransform.columns.2, lastCameraTransform.columns.2) <= cameraRotationThreshold
         || distance_squared(cameraTransform.columns.3, lastCameraTransform.columns.3) >= cameraTranslationThreshold
+    }
+    
+    /// Check if the current frame should be saved or dropped based on sampling rate configuration
+    private func checkSamplingRate() -> Bool {
+        currentFrameIndex += 1
+        return currentFrameIndex % pickFrames == 0
     }
     
     private func accumulatePoints(frame: ARFrame, commandBuffer: MTLCommandBuffer, renderEncoder: MTLRenderCommandEncoder) {
