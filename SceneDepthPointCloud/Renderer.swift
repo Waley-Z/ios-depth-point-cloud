@@ -300,8 +300,8 @@ final class Renderer {
                 
                 let encoded = try jsonEncoder.encode(dataPack)
                 let encodedStr = String(data: encoded, encoding: .utf8)!
-                try await saveFile(content: encodedStr, filename: "\(frame.timestamp).json", folder: currentFolder + "/data")
-                try await savePic(pic: cvPixelBuffer2UIImage(pixelBuffer: frame.capturedImage), filename: "\(frame.timestamp).jpeg", folder: currentFolder + "/data")
+                try await saveFile(content: encodedStr, filename: "\(frame.timestamp)_\(pickFrames).json", folder: currentFolder + "/data")
+                try await savePic(pic: cvPixelBuffer2UIImage(pixelBuffer: frame.capturedImage), filename: "\(frame.timestamp)_\(pickFrames).jpeg", folder: currentFolder + "/data")
                 delegate?.didFinishTask()
             } catch {
                 print(error.localizedDescription)

@@ -8,7 +8,8 @@ This project adds the following functions:
 
 * Add buttons to start/pause recordings.
 
-* Save [ARFrame](https://developer.apple.com/documentation/arkit/arframe) raw data asynchronously at each frame when recording. The selected data include
+* Save [ARFrame](https://developer.apple.com/documentation/arkit/arframe) raw data asynchronously at a chosen rate when recording. The selected data include
+
   ```swift
   // custom struct for pulling necessary data from arframes
   struct ARFrameDataPack {
@@ -23,6 +24,8 @@ This project adds the following functions:
       var cameraIntrinsicsInversed: simd_float3x3
   }
   ```
+  
+  The sampling rate is controlled by a slider. One of every `n` *new* frames will be saved. The current sampling rate will be indicated in the filename, i.e. `{timestamp}_{samplingRate}.[json|jpeg]`.
   
   The captured images are stored in `jpeg` format and others are coded into `json` files of which the format is specified as below.
   
@@ -44,6 +47,8 @@ This project adds the following functions:
 <p align="center">
   <img src="README.assets/image-20221025144805695.png" width=50%/>
 </p>
+
+
 
 * Save the point cloud in PLY format when the recording is stopped.
 
