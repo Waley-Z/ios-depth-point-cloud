@@ -13,7 +13,7 @@ import VideoToolbox
 /// Get current time in string.
 func getTimeStr() -> String {
     let df = DateFormatter()
-    df.dateFormat = "yyyy-MM-dd hh:mm:ss"
+    df.dateFormat = "yyyy-MM-dd_hh.mm.ss"
     return df.string(from: Date())
 }
 
