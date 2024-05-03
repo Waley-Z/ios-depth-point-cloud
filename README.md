@@ -1,6 +1,14 @@
 # Save iOS ARFrame and Point Cloud
 
-This project improves the usability of the [sample code](https://developer.apple.com/documentation/arkit/environmental_analysis/displaying_a_point_cloud_using_scene_depth) from WWDC20 session [10611: Explore ARKit 4](https://developer.apple.com/wwdc20/10611/). Note that the sample code is also on the `original` branch and the original code from WWDC20 can be checked out at the first commit. The original project places points in the real-world using the scene's depth data to visualize the shape of the physical environment. 
+This project improves the usability of the [sample code](https://developer.apple.com/documentation/arkit/environmental_analysis/displaying_a_point_cloud_using_scene_depth) from WWDC20 session [10611: Explore ARKit 4](https://developer.apple.com/wwdc20/10611/). Note that the sample code is also on the [`original`](https://github.com/Waley-Z/ios-depth-point-cloud/tree/original) branch and the original code from WWDC20 can be checked out at the first commit. The original project places points in the real-world using the scene's depth data to visualize the shape of the physical environment.
+
+<p align="center">
+  <img src="README.assets/lidar_banner.jpg" width=90%/>
+</p>
+
+## Video walkthrough
+
+Check out the walkthrough video on [Youtube](https://youtu.be/0WMibv_dAMk).
 
 ## Usability functions
 
@@ -48,8 +56,6 @@ This project adds the following functions:
   <img src="README.assets/image-20221025144805695.png" width=50%/>
 </p>
 
-
-
 * Save the point cloud in `PLY` format when the recording is stopped.
 
   <p align="center">
@@ -80,5 +86,3 @@ This project adds the following functions:
 
   * [ryanphilly/IOS-PointCloud](https://github.com/ryanphilly/IOS-PointCloud)
   * [pjessesco/iPad-PLY-scanner](https://github.com/pjessesco/iPad-PLY-scanner)
-
-  
